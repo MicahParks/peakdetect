@@ -1,8 +1,6 @@
 # peakdetect
-Detect peaks in realtime timeseries data using z-scores.
-
-This is a Golang interface for the algorithm described by this StackOverflow
-answer: [https://stackoverflow.com/a/22640362/14797322](https://stackoverflow.com/a/22640362/14797322)
+Detect peaks in realtime timeseries data using z-scores. This is a Golang interface for the algorithm described
+by [this StackOverflow answer](https://stackoverflow.com/a/22640362/14797322).
 
 Unlike some implementations, a goal is to minimize the memory footprint and allow for the processing of new data points
 without reprocessing old ones.
