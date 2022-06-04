@@ -8,6 +8,8 @@ import (
 )
 
 const (
+	// These configurations are from the R example of the algorithm's author.
+	// https://stackoverflow.com/a/54507329/14797322
 	exampleLag       = 30
 	exampleInfluence = 0
 	exampleThreshold = 5
