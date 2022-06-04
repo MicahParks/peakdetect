@@ -64,7 +64,7 @@ type PeakDetector interface {
 	// choose a sensible threshold that makes the algorithm signal when you want it to (some trial-and-error might be
 	// needed here to get to a good threshold for your purpose).
 	//
-	// lag determines how much your data will be smoothed and how adaptive the algorithm is to changes in the long-term
+	// lag determines how much your data will be smoothed and how adaptive the algorithm is to change in the long-term
 	// average of the data. The more stationary your data is, the more lags you should include (this should improve the
 	// robustness of the algorithm). If your data contains time-varying trends, you should consider how quickly you want
 	// the algorithm to adapt to these trends. I.e., if you put lag at 10, it takes 10 'periods' before the algorithm's

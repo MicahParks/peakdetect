@@ -60,3 +60,19 @@ func TestPeakDetector_NextBatch(t *testing.T) {
 		}
 	}
 }
+
+func TestPeakDetector_SignalNegative(t *testing.T) {
+	data := []float64{0, 1, 0, -1, 0, -500}
+	const lag = 5
+
+	detector := peakdetect.NewPeakDetector()
+	err := detector.Initialize(exampleInfluence, exampleThreshold, data[:lag])
+	if err != nil {
+		t.Fatalf(logFmt, "Error during initilization.", err)
+	}
+
+	signal := detector.Next(data[lag])
+	if signal != peakdetect.SignalNegative {
+		t.Fatalf("Signal should have been negative.\n  Actual: %d", signal)
+	}
+}
