@@ -28,7 +28,8 @@ func main() {
 
 	// Start processing new data points and determine what signal, if any they produce.
 	//
-	// This method, .Next(), is best for when data is being processed in a stream, but this simply iterates over a slice.
+	// This method, .Next(), is best for when data are being processed in a stream, but this simply iterates over a
+	// slice.
 	nextDataPoints := data[lag:]
 	for i, newPoint := range nextDataPoints {
 		signal := detector.Next(newPoint)

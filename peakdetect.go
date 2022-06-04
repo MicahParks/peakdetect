@@ -86,7 +86,7 @@ func NewPeakDetector() PeakDetector {
 func (p *peakDetector) Initialize(influence, threshold float64, initialValues []float64) error {
 	p.lag = uint(len(initialValues))
 	if p.lag == 0 {
-		return fmt.Errorf("the length of the intial values is zero, the length is used as the lag for the algorithm: %w", ErrInvalidInitialValues)
+		return fmt.Errorf("the length of the initial values is zero, the length is used as the lag for the algorithm: %w", ErrInvalidInitialValues)
 	}
 	p.influence = influence
 	p.threshold = threshold

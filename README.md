@@ -1,3 +1,4 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/MicahParks/peakdetect.svg)](https://pkg.go.dev/github.com/MicahParks/peakdetect) [![Go Report Card](https://goreportcard.com/badge/github.com/MicahParks/peakdetect)](https://goreportcard.com/report/github.com/MicahParks/peakdetect)
 # peakdetect
 Detect peaks in realtime timeseries data using z-scores. This is a Golang interface for the algorithm described
 by [this StackOverflow answer](https://stackoverflow.com/a/22640362/14797322).
@@ -69,7 +70,8 @@ func main() {
 
 	// Start processing new data points and determine what signal, if any they produce.
 	//
-	// This method, .Next(), is best for when data is being processed in a stream, but this simply iterates over a slice.
+	// This method, .Next(), is best for when data are being processed in a stream, but this simply iterates over a
+	// slice.
 	nextDataPoints := data[lag:]
 	for i, newPoint := range nextDataPoints {
 		signal := detector.Next(newPoint)
