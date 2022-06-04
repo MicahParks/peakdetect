@@ -136,16 +136,16 @@ func (p *peakDetector) NextBatch(values []float64) []Signal {
 }
 
 // meanStdDev determines the mean and population standard deviation for the given population.
-func meanStdDev(sample []float64) (mean, stdDev float64) {
-	for _, num := range sample {
+func meanStdDev(population []float64) (mean, stdDev float64) {
+	for _, num := range population {
 		mean += num
 	}
-	mean /= float64(len(sample))
+	mean /= float64(len(population))
 
-	for _, num := range sample {
+	for _, num := range population {
 		stdDev += math.Pow(num-mean, 2)
 	}
-	stdDev /= float64(len(sample))
+	stdDev /= float64(len(population))
 	stdDev = math.Sqrt(stdDev)
 
 	return mean, stdDev
