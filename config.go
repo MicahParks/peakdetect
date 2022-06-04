@@ -1,4 +1,4 @@
-package main
+package peakdetect
 
 type Config struct {
 	// Lag determines how much your data will be smoothed and how adaptive the algorithm is to changes in the long-term
