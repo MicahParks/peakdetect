@@ -128,7 +128,7 @@ func (p *peakDetector) Next(value float64) (signal Signal) {
 }
 
 func (p *peakDetector) NextBatch(values []float64) []Signal {
-	signals := make([]Signal, len(values)) // TODO Test this method.
+	signals := make([]Signal, len(values))
 	for i, v := range values {
 		signals[i] = p.Next(v)
 	}
