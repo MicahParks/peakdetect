@@ -22,13 +22,13 @@ type Signal int8
 var ErrInvalidInitialValues = errors.New("the initial values provided are invalid")
 
 type peakDetector struct {
-	index       uint
-	influence   float64
-	lag         uint
-	cache       []float64
-	meanCache   []float64
-	stdDevCache []float64
-	threshold   float64
+	index      uint
+	influence  float64
+	lag        uint
+	cache      []float64
+	prevMean   float64
+	prevStdDev float64
+	threshold  float64
 }
 
 // PeakDetector detects peaks in realtime timeseries data using z-scores.
@@ -93,10 +93,8 @@ func (p *peakDetector) Initialize(influence, threshold float64, initialValues []
 
 	p.cache = make([]float64, p.lag)
 	copy(p.cache, initialValues)
-	p.meanCache = make([]float64, p.lag)
-	p.stdDevCache = make([]float64, p.lag)
 
-	p.meanCache[p.index], p.stdDevCache[p.index] = meanStdDev(initialValues)
+	p.prevMean, p.prevStdDev = meanStdDev(initialValues)
 
 	return nil
 }
@@ -108,9 +106,9 @@ func (p *peakDetector) Next(value float64) (signal Signal) {
 		p.index = 0
 	}
 
-	if math.Abs(value-p.meanCache[prevIndex]) > p.threshold*p.stdDevCache[prevIndex] {
+	if math.Abs(value-p.prevMean) > p.threshold*p.prevStdDev {
 		p.cache[p.index] = p.influence*value + (1-p.influence)*p.cache[prevIndex]
-		if value > p.meanCache[prevIndex] {
+		if value > p.prevMean {
 			signal = SignalPositive
 		} else {
 			signal = SignalNegative
@@ -120,9 +118,7 @@ func (p *peakDetector) Next(value float64) (signal Signal) {
 		p.cache[p.index] = value
 	}
 
-	mean, stdDev := meanStdDev(p.cache)
-	p.meanCache[p.index] = mean
-	p.stdDevCache[p.index] = stdDev
+	p.prevMean, p.prevStdDev = meanStdDev(p.cache)
 
 	return signal
 }
