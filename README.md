@@ -1,6 +1,6 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/MicahParks/peakdetect.svg)](https://pkg.go.dev/github.com/MicahParks/peakdetect) [![Go Report Card](https://goreportcard.com/badge/github.com/MicahParks/peakdetect)](https://goreportcard.com/report/github.com/MicahParks/peakdetect)
 # peakdetect
-Detect peaks in realtime timeseries data using z-scores. This is a Golang interface for the algorithm described
+Detect peaks in realtime timeseries data using z-scores. This is a Golang implementation for the algorithm described
 by [this StackOverflow answer](https://stackoverflow.com/a/22640362/14797322).
 
 Unlike some implementations, a goal is to minimize the memory footprint and allow for the processing of new data points
