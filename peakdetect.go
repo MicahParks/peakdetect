@@ -22,13 +22,14 @@ type Signal int8
 var ErrInvalidInitialValues = errors.New("the initial values provided are invalid")
 
 type peakDetector struct {
-	index      uint
-	influence  float64
-	lag        uint
-	cache      []float64
-	prevMean   float64
-	prevStdDev float64
-	threshold  float64
+	index            uint
+	influence        float64
+	lag              uint
+	movingMeanStdDev *movingMeanStdDev
+	prevMean         float64
+	prevStdDev       float64
+	prevValue        float64
+	threshold        float64
 }
 
 // PeakDetector detects peaks in realtime timeseries data using z-scores.
@@ -80,7 +81,9 @@ type PeakDetector interface {
 
 // NewPeakDetector creates a new PeakDetector. It must be initialized before use.
 func NewPeakDetector() PeakDetector {
-	return &peakDetector{}
+	return &peakDetector{
+		movingMeanStdDev: &movingMeanStdDev{},
+	}
 }
 
 func (p *peakDetector) Initialize(influence, threshold float64, initialValues []float64) error {
@@ -91,34 +94,33 @@ func (p *peakDetector) Initialize(influence, threshold float64, initialValues []
 	p.influence = influence
 	p.threshold = threshold
 
-	p.cache = make([]float64, p.lag)
-	copy(p.cache, initialValues)
-
-	p.prevMean, p.prevStdDev = meanStdDev(initialValues)
+	for _, value := range initialValues {
+		p.prevMean, p.prevStdDev = p.movingMeanStdDev.next(value)
+		p.prevValue = value
+	}
 
 	return nil
 }
 
 func (p *peakDetector) Next(value float64) (signal Signal) {
-	prevIndex := p.index
 	p.index++
 	if p.index == p.lag {
 		p.index = 0
 	}
 
 	if math.Abs(value-p.prevMean) > p.threshold*p.prevStdDev {
-		p.cache[p.index] = p.influence*value + (1-p.influence)*p.cache[prevIndex]
 		if value > p.prevMean {
 			signal = SignalPositive
 		} else {
 			signal = SignalNegative
 		}
+		value = p.influence*value + (1-p.influence)*p.prevValue
 	} else {
 		signal = SignalNeutral
-		p.cache[p.index] = value
 	}
 
-	p.prevMean, p.prevStdDev = meanStdDev(p.cache)
+	p.prevMean, p.prevStdDev = p.movingMeanStdDev.next(value)
+	p.prevValue = value
 
 	return signal
 }
@@ -132,17 +134,28 @@ func (p *peakDetector) NextBatch(values []float64) []Signal {
 }
 
 // meanStdDev determines the mean and population standard deviation for the given population.
-func meanStdDev(population []float64) (mean, stdDev float64) {
-	for _, num := range population {
-		mean += num
-	}
-	mean /= float64(len(population))
+type movingMeanStdDev struct {
+	n            float64
+	prevMean     float64
+	sumOfSquares float64
+}
 
-	for _, num := range population {
-		stdDev += math.Pow(num-mean, 2)
+// Next computes the next mean and population standard deviation.
+// TODO This does not work in a sliding window fashion.
+//
+// https://www.johndcook.com/blog/standard_deviation/
+func (m *movingMeanStdDev) next(value float64) (mean, stdDev float64) {
+	m.n++ // TODO Find a way to cap m.n and use as sliding window.
+	if m.n == 1 {
+		m.prevMean = value
+		m.sumOfSquares = 0
+		return value, 0
 	}
-	stdDev /= float64(len(population))
-	stdDev = math.Sqrt(stdDev)
 
-	return mean, stdDev
+	mean = m.prevMean + (value-m.prevMean)/m.n
+	sumOfSquares := m.sumOfSquares + (value-m.prevMean)*(value-mean)
+	m.prevMean = mean
+	m.sumOfSquares = sumOfSquares
+
+	return mean, math.Sqrt(sumOfSquares / (m.n))
 }
