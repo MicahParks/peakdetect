@@ -137,6 +137,6 @@ at: https://stackoverflow.com/questions/22583391/peak-signal-detection-in-realti
 (version: 2020-11-08).
 
 * [StackOverflow: Peak detection in realtime timeseries data](https://stackoverflow.com/a/22640362/14797322).
-* [StackOverflow: sliding window for online algorithm to calculate mean and standard devation](https://stackoverflow.com/a/14637676/14797322)
+* [StackOverflow: sliding window for online algorithm to calculate mean and standard devation](https://stackoverflow.com/a/14638138/14797322).
 * [Welford's algorithm related blog post](https://www.johndcook.com/blog/standard_deviation/).
 * Yeah, I used [Wikipedia](https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance) too.
