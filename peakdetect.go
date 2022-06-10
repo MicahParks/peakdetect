@@ -94,10 +94,8 @@ func (p *peakDetector) Initialize(influence, threshold float64, initialValues []
 	p.influence = influence
 	p.threshold = threshold
 
-	for _, value := range initialValues {
-		p.prevMean, p.prevStdDev = p.movingMeanStdDev.next(value)
-		p.prevValue = value
-	}
+	p.prevMean, p.prevStdDev = p.movingMeanStdDev.initialize(initialValues)
+	p.prevValue = initialValues[p.lag-1]
 
 	return nil
 }
@@ -135,27 +133,52 @@ func (p *peakDetector) NextBatch(values []float64) []Signal {
 
 // meanStdDev determines the mean and population standard deviation for the given population.
 type movingMeanStdDev struct {
-	n            float64
+	cache        []float64
+	cacheLen     float64
+	cacheLenU    uint
+	index        uint
 	prevMean     float64
-	sumOfSquares float64
+	prevVariance float64
 }
 
-// Next computes the next mean and population standard deviation.
-// TODO This does not work in a sliding window fashion.
+// TODO Would using Welford's algorithm here speed it up?
+func (m *movingMeanStdDev) initialize(initialValues []float64) (mean, stdDev float64) {
+	m.cacheLenU = uint(len(initialValues))
+	m.cacheLen = float64(m.cacheLenU)
+	m.cache = make([]float64, m.cacheLenU)
+	copy(m.cache, initialValues)
+
+	for _, num := range m.cache {
+		mean += num
+	}
+	mean /= m.cacheLen
+	m.prevMean = mean
+
+	for _, num := range m.cache {
+		stdDev += math.Pow(num-mean, 2)
+	}
+	stdDev /= m.cacheLen
+	m.prevVariance = stdDev
+	stdDev = math.Sqrt(stdDev)
+
+	return mean, stdDev
+}
+
+// Next computes the next mean and population standard deviation. It uses a sliding window and is based on Welford's
+// method.
 //
-// https://www.johndcook.com/blog/standard_deviation/
+// https://stackoverflow.com/a/14638138/14797322
 func (m *movingMeanStdDev) next(value float64) (mean, stdDev float64) {
-	m.n++ // TODO Find a way to cap m.n and use as sliding window.
-	if m.n == 1 {
-		m.prevMean = value
-		m.sumOfSquares = 0
-		return value, 0
+	outOfWindow := m.cache[m.index]
+	m.cache[m.index] = value
+	m.index++
+	if m.index == m.cacheLenU {
+		m.index = 0
 	}
 
-	mean = m.prevMean + (value-m.prevMean)/m.n
-	sumOfSquares := m.sumOfSquares + (value-m.prevMean)*(value-mean)
-	m.prevMean = mean
-	m.sumOfSquares = sumOfSquares
+	newMean := m.prevMean + (value-outOfWindow)/m.cacheLen
+	m.prevVariance = m.prevVariance + (value-newMean+outOfWindow-m.prevMean)*(value-outOfWindow)/(m.cacheLen)
+	m.prevMean = newMean
 
-	return mean, math.Sqrt(sumOfSquares / (m.n))
+	return m.prevMean, math.Sqrt(m.prevVariance)
 }

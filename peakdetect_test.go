@@ -65,6 +65,16 @@ func TestPeakDetector_NextBatch(t *testing.T) {
 	}
 }
 
+func BenchmarkPeakDetector_NextBatch(b *testing.B) {
+	detector := peakdetect.NewPeakDetector()
+	err := detector.Initialize(exampleInfluence, exampleThreshold, exampleInputs[0:exampleLag])
+	if err != nil {
+		b.Fatalf(logFmt, "Error during initilization.", err)
+	}
+
+	detector.NextBatch(exampleInputs[exampleLag:])
+}
+
 func TestPeakDetector_SignalNegative(t *testing.T) {
 	data := []float64{0, 1, 0, -1, 0, -500}
 	const lag = 5
