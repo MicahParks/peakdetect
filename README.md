@@ -103,7 +103,40 @@ coverage: 100.0% of statements
 ok      github.com/MicahParks/peakdetect        0.019s
 ```
 
+# Performance
+To further improve performance, this algorithm uses Welford's algorithm on initialization
+and an adaptation of [this StackOverflow answer](https://stackoverflow.com/a/14638138/14797322) to calculate the mean
+and population standard deviation for the lag period (sliding window). This appears to improve performance by more than
+a factor of 10!
+
+`v0.0.4`
+```
+goos: linux
+goarch: amd64
+pkg: github.com/MicahParks/peakdetect
+cpu: Intel(R) Core(TM) i5-9600K CPU @ 3.70GHz
+BenchmarkPeakDetector_NextBatch
+BenchmarkPeakDetector_NextBatch-6   	1000000000	         0.0000278 ns/op
+PASS
+```
+
+`v0.0.5`
+```
+goos: linux
+goarch: amd64
+pkg: github.com/MicahParks/peakdetect
+cpu: Intel(R) Core(TM) i5-9600K CPU @ 3.70GHz
+BenchmarkPeakDetector_NextBatch-6       1000000000               0.0000013 ns/op
+PASS
+ok      github.com/MicahParks/peakdetect        0.002s
+```
+
 # References
 Brakel, J.P.G. van (2014). "Robust peak detection algorithm using z-scores". Stack Overflow. Available
 at: https://stackoverflow.com/questions/22583391/peak-signal-detection-in-realtime-timeseries-data/22640362#22640362
 (version: 2020-11-08).
+
+* [StackOverflow: Peak detection in realtime timeseries data](https://stackoverflow.com/a/22640362/14797322).
+* [StackOverflow: sliding window for online algorithm to calculate mean and standard devation](https://stackoverflow.com/a/14637676/14797322)
+* [Welford's algorithm related blog post](https://www.johndcook.com/blog/standard_deviation/).
+* Yeah, I used [Wikipedia](https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance) too.
