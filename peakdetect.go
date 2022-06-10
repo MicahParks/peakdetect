@@ -22,13 +22,14 @@ type Signal int8
 var ErrInvalidInitialValues = errors.New("the initial values provided are invalid")
 
 type peakDetector struct {
-	index      uint
-	influence  float64
-	lag        uint
-	cache      []float64
-	prevMean   float64
-	prevStdDev float64
-	threshold  float64
+	index            uint
+	influence        float64
+	lag              uint
+	movingMeanStdDev *movingMeanStdDev
+	prevMean         float64
+	prevStdDev       float64
+	prevValue        float64
+	threshold        float64
 }
 
 // PeakDetector detects peaks in realtime timeseries data using z-scores.
@@ -80,7 +81,9 @@ type PeakDetector interface {
 
 // NewPeakDetector creates a new PeakDetector. It must be initialized before use.
 func NewPeakDetector() PeakDetector {
-	return &peakDetector{}
+	return &peakDetector{
+		movingMeanStdDev: &movingMeanStdDev{},
+	}
 }
 
 func (p *peakDetector) Initialize(influence, threshold float64, initialValues []float64) error {
@@ -91,34 +94,31 @@ func (p *peakDetector) Initialize(influence, threshold float64, initialValues []
 	p.influence = influence
 	p.threshold = threshold
 
-	p.cache = make([]float64, p.lag)
-	copy(p.cache, initialValues)
-
-	p.prevMean, p.prevStdDev = meanStdDev(initialValues)
+	p.prevMean, p.prevStdDev = p.movingMeanStdDev.initialize(initialValues)
+	p.prevValue = initialValues[p.lag-1]
 
 	return nil
 }
 
 func (p *peakDetector) Next(value float64) (signal Signal) {
-	prevIndex := p.index
 	p.index++
 	if p.index == p.lag {
 		p.index = 0
 	}
 
 	if math.Abs(value-p.prevMean) > p.threshold*p.prevStdDev {
-		p.cache[p.index] = p.influence*value + (1-p.influence)*p.cache[prevIndex]
 		if value > p.prevMean {
 			signal = SignalPositive
 		} else {
 			signal = SignalNegative
 		}
+		value = p.influence*value + (1-p.influence)*p.prevValue
 	} else {
 		signal = SignalNeutral
-		p.cache[p.index] = value
 	}
 
-	p.prevMean, p.prevStdDev = meanStdDev(p.cache)
+	p.prevMean, p.prevStdDev = p.movingMeanStdDev.next(value)
+	p.prevValue = value
 
 	return signal
 }
@@ -132,17 +132,54 @@ func (p *peakDetector) NextBatch(values []float64) []Signal {
 }
 
 // meanStdDev determines the mean and population standard deviation for the given population.
-func meanStdDev(population []float64) (mean, stdDev float64) {
-	for _, num := range population {
-		mean += num
-	}
-	mean /= float64(len(population))
+type movingMeanStdDev struct {
+	cache        []float64
+	cacheLen     float64
+	cacheLenU    uint
+	index        uint
+	prevMean     float64
+	prevVariance float64
+}
 
-	for _, num := range population {
-		stdDev += math.Pow(num-mean, 2)
-	}
-	stdDev /= float64(len(population))
-	stdDev = math.Sqrt(stdDev)
+// initialize creates the needed assets for the movingMeanStdDev. It also computes the resulting mean and population
+// standard deviation using Welford's method.
+//
+// https://www.johndcook.com/blog/standard_deviation/
+func (m *movingMeanStdDev) initialize(initialValues []float64) (mean, stdDev float64) {
+	m.cacheLenU = uint(len(initialValues))
+	m.cacheLen = float64(m.cacheLenU)
+	m.cache = make([]float64, m.cacheLenU)
+	copy(m.cache, initialValues)
 
-	return mean, stdDev
+	prevMean := initialValues[0]
+	var sumOfSquares float64
+	for i := uint(2); i <= m.cacheLenU; i++ {
+		value := initialValues[i-1]
+		mean = prevMean + (value-prevMean)/float64(i)
+		sumOfSquares = sumOfSquares + (value-prevMean)*(value-mean)
+		prevMean = mean
+	}
+
+	m.prevMean = mean
+	m.prevVariance = sumOfSquares / m.cacheLen
+	return mean, math.Sqrt(m.prevVariance)
+}
+
+// Next computes the next mean and population standard deviation. It uses a sliding window and is based on Welford's
+// method.
+//
+// https://stackoverflow.com/a/14638138/14797322
+func (m *movingMeanStdDev) next(value float64) (mean, stdDev float64) {
+	outOfWindow := m.cache[m.index]
+	m.cache[m.index] = value
+	m.index++
+	if m.index == m.cacheLenU {
+		m.index = 0
+	}
+
+	newMean := m.prevMean + (value-outOfWindow)/m.cacheLen
+	m.prevVariance = m.prevVariance + (value-newMean+outOfWindow-m.prevMean)*(value-outOfWindow)/(m.cacheLen)
+	m.prevMean = newMean
+
+	return m.prevMean, math.Sqrt(m.prevVariance)
 }
