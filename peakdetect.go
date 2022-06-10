@@ -141,27 +141,28 @@ type movingMeanStdDev struct {
 	prevVariance float64
 }
 
-// TODO Would using Welford's algorithm here speed it up?
+// initialize creates the needed assets for the movingMeanStdDev. It also computes the resulting mean and population
+// standard deviation using Welford's method.
+//
+// https://www.johndcook.com/blog/standard_deviation/
 func (m *movingMeanStdDev) initialize(initialValues []float64) (mean, stdDev float64) {
 	m.cacheLenU = uint(len(initialValues))
 	m.cacheLen = float64(m.cacheLenU)
 	m.cache = make([]float64, m.cacheLenU)
 	copy(m.cache, initialValues)
 
-	for _, num := range m.cache {
-		mean += num
+	prevMean := initialValues[0]
+	var sumOfSquares float64
+	for i := uint(2); i <= m.cacheLenU; i++ {
+		value := initialValues[i-1]
+		mean = prevMean + (value-prevMean)/float64(i)
+		sumOfSquares = sumOfSquares + (value-prevMean)*(value-mean)
+		prevMean = mean
 	}
-	mean /= m.cacheLen
+
 	m.prevMean = mean
-
-	for _, num := range m.cache {
-		stdDev += math.Pow(num-mean, 2)
-	}
-	stdDev /= m.cacheLen
-	m.prevVariance = stdDev
-	stdDev = math.Sqrt(stdDev)
-
-	return mean, stdDev
+	m.prevVariance = sumOfSquares / m.cacheLen
+	return mean, math.Sqrt(m.prevVariance)
 }
 
 // Next computes the next mean and population standard deviation. It uses a sliding window and is based on Welford's
