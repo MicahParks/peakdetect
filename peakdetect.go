@@ -151,8 +151,8 @@ func (m *movingMeanStdDev) initialize(initialValues []float64) (mean, stdDev flo
 	m.cache = make([]float64, m.cacheLenU)
 	copy(m.cache, initialValues)
 
-	prevMean := initialValues[0]
-	mean = prevMean
+	mean = initialValues[0]
+	prevMean := mean
 	var sumOfSquares float64
 	for i := uint(2); i <= m.cacheLenU; i++ {
 		value := initialValues[i-1]
