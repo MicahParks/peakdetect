@@ -114,21 +114,21 @@ a factor of 10!
 goos: linux
 goarch: amd64
 pkg: github.com/MicahParks/peakdetect
-cpu: Intel(R) Core(TM) i5-9600K CPU @ 3.70GHz
-BenchmarkPeakDetector_NextBatch
-BenchmarkPeakDetector_NextBatch-6   	1000000000	         0.0000278 ns/op
+cpu: AMD Ryzen 9 7950X 16-Core Processor            
+BenchmarkPeakDetector_NextBatch-32      1000000000               0.0000221 ns/op
 PASS
+ok      github.com/MicahParks/peakdetect        0.003s
 ```
 
-`v0.0.5`
+`v0.1.0`
 ```
 goos: linux
 goarch: amd64
 pkg: github.com/MicahParks/peakdetect
-cpu: Intel(R) Core(TM) i5-9600K CPU @ 3.70GHz
-BenchmarkPeakDetector_NextBatch-6       1000000000               0.0000013 ns/op
+cpu: AMD Ryzen 9 7950X 16-Core Processor            
+BenchmarkPeakDetector_NextBatch-32      1000000000               0.0000011 ns/op
 PASS
-ok      github.com/MicahParks/peakdetect        0.002s
+ok      github.com/MicahParks/peakdetect        0.003s
 ```
 
 # References
