@@ -32,6 +32,27 @@ func TestPeakDetector_Initialize(t *testing.T) {
 	}
 }
 
+func TestPeakDetector_Lag1(t *testing.T) {
+	data := []float64{1, 1, 15, 1, 1}
+	influence := 0.0
+	lag := 1
+	threshold := 1.0
+
+	detector := peakdetect.NewPeakDetector()
+	err := detector.Initialize(influence, threshold, data[0:lag])
+	if err != nil {
+		t.Fatalf(logFmt, "Error during initilization.", err)
+	}
+
+	signals := detector.NextBatch(data[lag:])
+	expected := []peakdetect.Signal{0, 1, 0, 0}
+	for i, signal := range signals {
+		if signal != expected[i] {
+			t.Fatalf("Expected signal did not match actual signal.\n  Expected: %d\n  Actual: %d", expected[i], signal)
+		}
+	}
+}
+
 func TestPeakDetector_Next(t *testing.T) {
 	detector := peakdetect.NewPeakDetector()
 	err := detector.Initialize(exampleInfluence, exampleThreshold, exampleInputs[0:exampleLag])
